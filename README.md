@@ -33,17 +33,19 @@ Agents follow the NANDA agent specification with additional fields:
 npm i
 ```
 
-### 2. Environment Variables
+### 2. MongoDB Setup (Required for transactions)
+
+For local development with transactions, run a single-node replica set:
 
 ```bash
-export MONGODB_URI="mongodb://localhost:27017"
-export NP_DB_NAME="nanda_points"
+docker run -d --name mongo -p 27017:27017 mongo:7 --replSet rs0
+docker exec mongo mongosh --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"localhost:27017"}]})'
 ```
 
 ### 3. Seed Database
 
 ```bash
-node seed.js
+MONGODB_URI="mongodb://localhost:27017" NP_DB_NAME="nanda_points" npm run seed
 ```
 
 This creates 11 sample agents with wallets and 1000 NP each.
@@ -51,19 +53,14 @@ This creates 11 sample agents with wallets and 1000 NP each.
 ### 4. Start Server
 
 ```bash
-npm run dev
-# or
-npm start
+MONGODB_URI="mongodb://localhost:27017" NP_DB_NAME="nanda_points" npm run dev
+# or for production
+MONGODB_URI="mongodb://localhost:27017" NP_DB_NAME="nanda_points" npm start
 ```
 
-### 5. MongoDB Setup (Optional - for transactions)
-
-For local development with transactions, run a single-node replica set:
-
-```bash
-docker run -d --name mongo -p 27017:27017 mongo:7 --replSet rs0
-docker exec -it mongo mongosh --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"localhost:27017"}]})'
-```
+**Environment Variables:**
+- `MONGODB_URI`: MongoDB connection string (default: "mongodb://localhost:27017")
+- `NP_DB_NAME`: Database name for NANDA Points (default: "nanda_points")
 
 ## Usage
 
