@@ -1,5 +1,8 @@
+import express from "express";
+import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { NP_CURRENCY, NP_SCALE, toMinor, toPoints } from "../models/index.js";
 import { initMongo } from "../services/index.js";
@@ -8,8 +11,21 @@ import { getBalanceMinor } from "../routes/walletRoutes.js";
 import { transfer } from "../routes/transactionRoutes.js";
 import { getReceiptByTx } from "../routes/receiptRoutes.js";
 
+// Environment configuration
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const HOST = process.env.HOST || 'localhost';
+
+// Initialize MongoDB connection
 await initMongo();
 
+// Create Express app
+const app = express();
+app.use(express.json());
+
+// Map to store transports by session ID for stateful connections
+const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
+
+// Create MCP server instance
 const server = new McpServer({ name: "nanda-points", version: "0.2.0" });
 
 server.registerTool(
@@ -92,5 +108,102 @@ server.registerTool(
   }
 );
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+// MCP POST endpoint handler
+const mcpPostHandler = async (req: express.Request, res: express.Response) => {
+  const sessionId = req.headers['mcp-session-id'] as string | undefined;
+
+  if (sessionId) {
+    console.log(`Received MCP request for session: ${sessionId}`);
+  } else {
+    console.log('New MCP request:', req.body);
+  }
+
+  try {
+    let transport: StreamableHTTPServerTransport;
+
+    if (sessionId && transports[sessionId]) {
+      // Reuse existing transport
+      transport = transports[sessionId];
+    } else if (!sessionId && isInitializeRequest(req.body)) {
+      // New initialization request
+      transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        onsessioninitialized: (sessionId: string) => {
+          // Store the transport by session ID when session is initialized
+          console.log(`Session initialized with ID: ${sessionId}`);
+          transports[sessionId] = transport;
+        }
+      });
+
+      // Set up onclose handler to clean up transport when closed
+      transport.onclose = () => {
+        const sid = transport.sessionId;
+        if (sid && transports[sid]) {
+          console.log(`Transport closed for session ${sid}, removing from transports map`);
+          delete transports[sid];
+        }
+      };
+
+      // Connect the transport to the MCP server BEFORE handling the request
+      await server.connect(transport);
+      await transport.handleRequest(req, res, req.body);
+      return; // Already handled
+    } else {
+      // Invalid request - no session ID or not initialization request
+      res.status(400).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32000,
+          message: 'Bad Request: No valid session ID provided',
+        },
+        id: null,
+      });
+      return;
+    }
+
+    // Handle the request with existing transport
+    await transport.handleRequest(req, res, req.body);
+  } catch (error) {
+    console.error('Error handling MCP request:', error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32603,
+          message: 'Internal server error',
+        },
+        id: null,
+      });
+    }
+  }
+};
+
+// Handle GET requests for SSE streams
+const mcpGetHandler = async (req: express.Request, res: express.Response) => {
+  const sessionId = req.headers['mcp-session-id'] as string | undefined;
+
+  if (!sessionId || !transports[sessionId]) {
+    res.status(400).send('Invalid or missing session ID');
+    return;
+  }
+
+  console.log(`Establishing SSE stream for session ${sessionId}`);
+  const transport = transports[sessionId];
+  await transport.handleRequest(req, res);
+};
+
+// Set up MCP routes
+app.post('/mcp', mcpPostHandler);
+app.get('/mcp', mcpGetHandler);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', server: 'nanda-points-mcp', version: '0.2.0' });
+});
+
+// Start the HTTP server
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 NANDA Points MCP Server running at http://${HOST}:${PORT}`);
+  console.log(`📡 MCP endpoint: http://${HOST}:${PORT}/mcp`);
+  console.log(`💊 Health check: http://${HOST}:${PORT}/health`);
+});
