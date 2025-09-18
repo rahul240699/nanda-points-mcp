@@ -20,7 +20,7 @@ The server uses a modular structure:
 
 Agents follow the NANDA agent specification with additional fields:
 
--   `agent_name` - Unique identifier (replaces DID)
+-   `agent_name` - Unique identifier
 -   `walletId` - Links to associated wallet
 -   `serviceCharge` - NP points for service charges
 -   Full agent metadata (provider, endpoints, capabilities, etc.)
