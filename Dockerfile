@@ -1,40 +1,49 @@
-# Use Node.js 20 LTS as base image
-FROM node:20-alpine
+# ---------- Builder ----------
+FROM node:20-alpine AS builder
 
-# Set working directory
+# Workdir
 WORKDIR /app
 
-# Copy package files
+# Install ALL deps (including dev) so TypeScript can compile
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy source code
+# Copy the rest of the source and build
 COPY . .
-
-# Build the TypeScript application
 RUN npm run build
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+# ---------- Runtime ----------
+FROM node:20-alpine AS runner
 
-# Change ownership of the app directory
-RUN chown -R nodejs:nodejs /app
-USER nodejs
+WORKDIR /app
 
-# Expose port
+# Copy only the files needed at runtime
+COPY package*.json ./
+# Install ONLY production deps for a smaller image
+RUN npm ci --omit=dev
+
+# Bring over the compiled JS from the builder stage
+COPY --from=builder /app/dist ./dist
+
+# If you have any non-TS runtime assets (configs/public files), copy them as needed.
+# Example: uncomment if you ship an MCP manifest or static assets at runtime
+# COPY --from=builder /app/mcp.json ./mcp.json
+# COPY --from=builder /app/public ./public
+
+# Use the pre-created non-root `node` user in the official image
+USER node
+
+# Network
 EXPOSE 3000
 
-# Set environment variables
+# Environment
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
 
-# Health check
+# Health check (adjust path if your server exposes a different health route)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
-# Start the application
+# Start the app (expects your package.json start script to run the built server, e.g., `node dist/index.js`)
 CMD ["npm", "start"]
