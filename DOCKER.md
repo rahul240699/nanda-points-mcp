@@ -85,7 +85,7 @@ This document explains how to run the NANDA Points MCP Server using Docker with 
 
 ```bash
 # Set up environment variables
-export MONGODB_URI="mongodb+srv://username:password@cluster.mongodb.net/nanda_points?retryWrites=true&w=majority"
+export MONGODB_URI="link-to-your-registry"
 export NP_DB_NAME="nanda_points"
 
 # Run the server locally
