@@ -256,6 +256,101 @@ If Claude Web can't connect to your MCP server:
 4. **Verify MCP endpoint**: Ensure the URL ends with `/mcp`
 5. **Check firewall**: Make sure your local server is accessible
 
+## Testing with Cursor IDE
+
+### 1. Configure MCP Server in Cursor
+
+Cursor supports MCP servers through project-specific configuration. Create a `.cursor/mcp.json` file in your project root:
+
+```json
+{
+  "mcpServers": {
+    "nanda-points": {
+      "url": "https://your-ngrok-url.ngrok-free.app/mcp"
+    }
+  }
+}
+```
+
+**Alternative Configuration Methods:**
+- **Global Settings**: Open Cursor → Cmd/Ctrl + Shift + P → "Cursor Settings" → "MCP" section
+- **Project-specific**: Place `.cursor/mcp.json` in your project root (recommended for this repo)
+
+### 2. Restart Cursor and Verify Connection
+
+1. **Restart Cursor** after adding the configuration
+2. **Check MCP Status**: Look for MCP server status in Cursor's status bar or settings
+3. **Verify Tools**: The NANDA Points tools should appear in Cursor's available tools
+
+### 3. Example Prompts for Testing Tools in Cursor
+
+Once connected, test each tool with these prompts in Cursor's chat:
+
+#### **getBalance Tool**
+```
+@nanda-points Check the NP balance for the claude-desktop agent
+```
+```
+@nanda-points What's the current balance for search-agent?
+```
+```
+@nanda-points Show me balances for claude-desktop, search-agent, and summarize-agent
+```
+
+#### **initiateTransaction Tool**
+```
+@nanda-points Transfer 100 NP from claude-desktop to search-agent
+```
+```
+@nanda-points Send 50 NANDA Points from search-agent to summarize-agent and show the receipt
+```
+```
+@nanda-points Make a payment of 25 NP from claude-desktop to ocr-agent
+```
+
+#### **getReceipt Tool**
+```
+@nanda-points Get the receipt for transaction ID: [paste-transaction-id-here]
+```
+```
+@nanda-points Show me the details of the last transaction receipt
+```
+
+#### **setServiceCharge Tool**
+```
+@nanda-points Set the service charge for search-agent to 10 NP
+```
+```
+@nanda-points Update the service charge for summarize-agent to 25 NANDA Points
+```
+
+#### **Complex Multi-Tool Operations**
+```
+@nanda-points Complete transaction workflow:
+1. Check balance for claude-desktop
+2. Transfer 75 NP from claude-desktop to vector-agent
+3. Set vector-agent's service charge to 15 NP
+4. Show final balances for both agents
+```
+
+### 4. Troubleshooting Cursor Connection
+
+If Cursor can't connect to your MCP server:
+
+1. **Check .cursor/mcp.json syntax**: Ensure valid JSON format
+2. **Verify ngrok URL**: Test `https://your-ngrok-url.ngrok-free.app/health` returns server info
+3. **Restart Cursor**: MCP configuration changes require restart
+4. **Check Cursor logs**: Look for MCP connection errors in Cursor's developer console
+5. **Test direct connection**: Use the test client to verify server is responding
+6. **Verify project root**: Ensure `.cursor/mcp.json` is in the correct directory
+
+### 5. Cursor vs Claude Web Differences
+
+- **Tool Invocation**: Use `@nanda-points` prefix in Cursor vs direct prompts in Claude Web
+- **Session Management**: Cursor maintains persistent MCP connections vs Claude Web's per-session connections
+- **Configuration**: Cursor uses project files vs Claude Web's workspace settings
+- **Tool Limitations**: Cursor supports up to 40 tools simultaneously
+
 ## Usage
 
 ### Example Agent Names
