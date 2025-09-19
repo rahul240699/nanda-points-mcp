@@ -4,7 +4,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { NP_CURRENCY, NP_SCALE, toMinor, toPoints } from "../models/index.js";
+import { NP } from "../models/index.js";
 import { initMongo } from "../services/index.js";
 import { getAgentWithWallet, getAgent, setAgentServiceCharge } from "../routes/agentRoutes.js";
 import { getBalanceMinor } from "../routes/walletRoutes.js";
@@ -41,7 +41,7 @@ server.registerTool(
       return { content: [{ type: "text", text: JSON.stringify({ error: "AGENT_NOT_FOUND", agent_name }, null, 2) }] };
     }
     const balMinor = await getBalanceMinor(agent_name);
-    const payload = { agent_name, currency: NP_CURRENCY, scale: NP_SCALE, balanceMinor: balMinor, balancePoints: toPoints(balMinor) };
+    const payload = { agent_name, currency: NP.code, scale: NP.scale, balanceMinor: balMinor, balancePoints: NP.toMajorUnits(balMinor) };
     return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] };
   }
 );
@@ -65,7 +65,7 @@ server.registerTool(
     }
     
     try {
-      const { tx, receipt, payload } = await transfer(from, to, toMinor(amount));
+      const { tx, receipt, payload } = await transfer(from, to, NP.toMinorUnits(amount));
       const result = { 
         txId: tx.txId, 
         status: tx.status, 

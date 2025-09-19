@@ -1,6 +1,6 @@
 import { Collection } from "mongodb";
 import { client, db, initMongo as initMongoShared, closeMongo as closeMongoShared } from "../utils/mongo.js";
-import { AgentFacts, Wallet, Txn, Receipt } from "../models/index.js";
+import { AgentFacts, Wallet, Txn, Receipt } from "../models/index";
 
 let Agents: Collection<AgentFacts>;
 let Wallets: Collection<Wallet>;

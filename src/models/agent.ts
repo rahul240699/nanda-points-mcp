@@ -1,9 +1,3 @@
-// NP scale helpers
-export const NP_CURRENCY = "NP" as const;
-export const NP_SCALE = 0 as const; // minor units per point = 10^0 = 1
-export type Minor = number; // stored integers
-export const toMinor = (points: number): Minor => Math.trunc(points * Math.pow(10, NP_SCALE));
-export const toPoints = (minor: Minor): number => minor / Math.pow(10, NP_SCALE);
 
 // === Agent Facts ===
 // Based on the provided agent format with serviceCharge added

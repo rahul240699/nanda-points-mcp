@@ -1,12 +1,13 @@
-import { type Minor } from './agent.js';
+import { ObjectId } from 'mongodb';
+import { MinorUnits } from './points';
 
 export interface Receipt {
-  _id?: any;
+  _id?: ObjectId | string;
   txId: string; // mirrors transaction
   issuedAt: string;
   fromAgent: string; // agent_name of sender
   toAgent: string; // agent_name of receiver
-  amountMinor: Minor;
-  fromBalanceAfter: Minor;
-  toBalanceAfter: Minor;
+  amountMinor: MinorUnits;
+  fromBalanceAfter: MinorUnits;
+  toBalanceAfter: MinorUnits;
 }

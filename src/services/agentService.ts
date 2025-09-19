@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
-import { Agents } from './database.js';
-import { AgentFacts } from '../models/index.js';
+import { Agents } from './database';
+import { AgentFacts } from '../models/index';
 
 export const DEFAULT_SERVICE_CHARGE_POINTS = 10;
 
