@@ -7,6 +7,7 @@ import { z } from "zod";
 import { NP } from "../models/index";
 import { initMongo } from "../services/index";
 import { getAgentWithWallet, getAgent, setAgentServiceCharge } from "../routes/agentRoutes";
+import { attachWallet } from "../routes/walletRoutes";
 import { getBalanceMinor } from "../routes/walletRoutes";
 import { transfer } from "../routes/transactionRoutes";
 import { getReceiptByTx } from "../routes/receiptRoutes";
@@ -105,6 +106,31 @@ server.registerTool(
     await setAgentServiceCharge(agent_name, serviceChargePoints);
     const updated = await getAgent(agent_name);
     return { content: [{ type: "text", text: JSON.stringify({ agent_name, serviceCharge: updated?.serviceCharge }, null, 2) }] };
+  }
+);
+
+server.registerTool(
+  "attachWallet",
+  { 
+    title: "Attach Wallet to Agent", 
+    description: "Attach a wallet to an agent. If the agent doesn't have a wallet, creates a new one and attaches it. If agent already has a wallet, returns the existing wallet. Returns error if agent does not exist.", 
+    inputSchema: { 
+      agent_name: z.string().min(1), 
+      seedPoints: z.number().int().nonnegative().optional().describe("Initial points to seed the wallet with (default: 1000)")
+    } 
+  },
+  async ({ agent_name, seedPoints }) => {
+    const result = await attachWallet(agent_name, seedPoints);
+    if (!result) {
+      return { content: [{ type: "text", text: JSON.stringify({ error: "AGENT_NOT_FOUND", agent_name }, null, 2) }] };
+    }
+    return { content: [{ type: "text", text: JSON.stringify({ 
+      agent_name, 
+      walletId: result.wallet.walletId,
+      balanceMinor: result.wallet.balanceMinor,
+      balancePoints: NP.toMajorUnits(result.wallet.balanceMinor),
+      message: "Wallet successfully attached to agent"
+    }, null, 2) }] };
   }
 );
 
