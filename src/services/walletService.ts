@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { Wallets } from './database';
-import { Wallet, NP } from '../models/index';
+import { Wallet, NP, createMinorUnits, MinorUnits } from '../models/index';
 
 export const DEFAULT_SEED_POINTS = 1000; // new agent seed
 
@@ -35,7 +35,7 @@ export async function getWallet(agent_name: string): Promise<Wallet | null> {
   return Wallets.findOne({ agent_name });
 }
 
-export async function getBalanceMinor(agent_name: string): Promise<number> {
+export async function getBalanceMinor(agent_name: string): Promise<MinorUnits> {
   const w = await getWallet(agent_name);
-  return w?.balanceMinor ?? 0;
+  return w?.balanceMinor ?? createMinorUnits(0);
 }
