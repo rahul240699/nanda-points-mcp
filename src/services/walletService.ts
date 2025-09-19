@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
-import { Wallets } from './database.js';
-import { Wallet, toMinor } from '../models/index.js';
+import { Wallets } from './database';
+import { Wallet, NP, createMinorUnits, MinorUnits } from '../models/index';
 
 export const DEFAULT_SEED_POINTS = 1000; // new agent seed
 
@@ -8,7 +8,7 @@ function nowIso() { return new Date().toISOString(); }
 
 export async function ensureWallet(agent_name: string, seedPoints?: number): Promise<Wallet> {
   const createdAt = nowIso();
-  const seedMinor = toMinor(seedPoints ?? DEFAULT_SEED_POINTS);
+  const seedMinor = NP.toMinorUnits(seedPoints ?? DEFAULT_SEED_POINTS);
 
   let wallet = await Wallets.findOne({ agent_name });
   if (!wallet) {
@@ -16,8 +16,6 @@ export async function ensureWallet(agent_name: string, seedPoints?: number): Pro
     const toInsertWallet: Wallet = {
       walletId,
       agent_name,
-      currency: "NP",
-      scale: 0,
       balanceMinor: seedMinor,
       createdAt,
       updatedAt: createdAt
@@ -37,7 +35,7 @@ export async function getWallet(agent_name: string): Promise<Wallet | null> {
   return Wallets.findOne({ agent_name });
 }
 
-export async function getBalanceMinor(agent_name: string): Promise<number> {
+export async function getBalanceMinor(agent_name: string): Promise<MinorUnits> {
   const w = await getWallet(agent_name);
-  return w?.balanceMinor ?? 0;
+  return w?.balanceMinor ?? createMinorUnits(0);
 }

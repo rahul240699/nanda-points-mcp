@@ -1,10 +1,10 @@
 import { randomUUID } from "crypto";
-import { Wallets, Transactions, Receipts } from './database.js';
-import { Txn, Receipt } from '../models/index.js';
+import { Wallets, Transactions, Receipts } from './database';
+import { Txn, Receipt, MinorUnits } from '../models/index';
 
 function nowIso() { return new Date().toISOString(); }
 
-export async function transfer(fromAgent: string, toAgent: string, amountMinor: number): Promise<{ tx: Txn; receipt: Receipt; payload: Receipt }> {
+export async function transfer(fromAgent: string, toAgent: string, amountMinor: MinorUnits): Promise<{ tx: Txn; receipt: Receipt; payload: Receipt }> {
   const createdAt = nowIso();
   const txId = randomUUID();
 

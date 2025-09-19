@@ -4,12 +4,12 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { NP_CURRENCY, NP_SCALE, toMinor, toPoints } from "../models/index.js";
-import { initMongo } from "../services/index.js";
-import { getAgentWithWallet, getAgent, setAgentServiceCharge } from "../routes/agentRoutes.js";
-import { getBalanceMinor } from "../routes/walletRoutes.js";
-import { transfer } from "../routes/transactionRoutes.js";
-import { getReceiptByTx } from "../routes/receiptRoutes.js";
+import { NP } from "../models/index";
+import { initMongo } from "../services/index";
+import { getAgentWithWallet, getAgent, setAgentServiceCharge } from "../routes/agentRoutes";
+import { getBalanceMinor } from "../routes/walletRoutes";
+import { transfer } from "../routes/transactionRoutes";
+import { getReceiptByTx } from "../routes/receiptRoutes";
 
 // Environment configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -41,7 +41,7 @@ server.registerTool(
       return { content: [{ type: "text", text: JSON.stringify({ error: "AGENT_NOT_FOUND", agent_name }, null, 2) }] };
     }
     const balMinor = await getBalanceMinor(agent_name);
-    const payload = { agent_name, currency: NP_CURRENCY, scale: NP_SCALE, balanceMinor: balMinor, balancePoints: toPoints(balMinor) };
+    const payload = { agent_name, currency: NP.code, scale: NP.scale, balanceMinor: balMinor, balancePoints: NP.toMajorUnits(balMinor) };
     return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] };
   }
 );
@@ -65,7 +65,7 @@ server.registerTool(
     }
     
     try {
-      const { tx, receipt, payload } = await transfer(from, to, toMinor(amount));
+      const { tx, receipt, payload } = await transfer(from, to, NP.toMinorUnits(amount));
       const result = { 
         txId: tx.txId, 
         status: tx.status, 

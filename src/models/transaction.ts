@@ -1,13 +1,14 @@
-import { NP_CURRENCY, NP_SCALE, type Minor } from './agent.js';
+import { ObjectId } from 'mongodb';
+import { MinorUnits } from './points';
 
 export interface Txn {
-  _id?: any; // Mongo _id
+  _id?: ObjectId | string; // Mongo _id
   txId: string; // uuid string
   fromAgent: string; // agent_name of sender
   toAgent: string; // agent_name of receiver
-  amountMinor: Minor;
-  currency: typeof NP_CURRENCY;
-  scale: typeof NP_SCALE;
+  amountMinor: MinorUnits;
+  currency: "NP";
+  scale: 0;
   createdAt: string;
   status: "completed" | "rejected";
   error?: string | null;

@@ -11,7 +11,7 @@ Modular MCP server for NANDA Points using MongoDB with agent-based transactions 
 
 The server uses a modular structure:
 
--   **Models** (`src/models/`) - TypeScript interfaces for agents, wallets, transactions, receipts
+-   **Models** (`src/models/`) - TypeScript interfaces and centralized points schema
 -   **Services** (`src/services/`) - Business logic and database operations
 -   **Routes** (`src/routes/`) - API route handlers
 -   **MCP Server** (`src/mcp/`) - MCP tool definitions and handlers
@@ -321,7 +321,8 @@ For backward compatibility with older MCP clients, you can still run via stdio b
 ```
 src/
 ├── models/           # TypeScript interfaces
-│   ├── agent.ts      # Agent facts and NP utilities
+│   ├── points.ts     # Centralized Points class and MinorUnits type
+│   ├── agent.ts      # Agent facts and metadata
 │   ├── wallet.ts     # Wallet interface
 │   ├── transaction.ts # Transaction interface
 │   ├── receipt.ts    # Receipt interface

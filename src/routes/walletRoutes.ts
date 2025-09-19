@@ -1,4 +1,4 @@
-import { getWallet, getBalanceMinor, ensureWallet } from '../services/walletService.js';
-import { Wallet } from '../models/index.js';
+import { getWallet, getBalanceMinor, ensureWallet } from '../services/walletService';
+import { Wallet } from '../models/index';
 
 export { getWallet, getBalanceMinor, ensureWallet };
