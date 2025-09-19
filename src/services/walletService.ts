@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
-import { Wallets, Agents } from './database';
-import { Wallet, NP, createMinorUnits, MinorUnits, AgentFacts } from '../models/index';
+import { Wallets, Agents } from './database.js';
+import { Wallet, NP, createMinorUnits, MinorUnits, AgentFacts } from '../models/index.js';
 
 export const DEFAULT_SEED_POINTS = 1000; // new agent seed
 

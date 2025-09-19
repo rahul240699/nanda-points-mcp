@@ -4,13 +4,13 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { NP } from "../models/index";
-import { initMongo } from "../services/index";
-import { getAgentWithWallet, getAgent, setAgentServiceCharge } from "../routes/agentRoutes";
-import { attachWallet } from "../routes/walletRoutes";
-import { getBalanceMinor } from "../routes/walletRoutes";
-import { transfer } from "../routes/transactionRoutes";
-import { getReceiptByTx } from "../routes/receiptRoutes";
+import { NP } from "../models/index.js";
+import { initMongo } from "../services/index.js";
+import { getAgentWithWallet, getAgent, setAgentServiceCharge } from "../routes/agentRoutes.js";
+import { attachWallet } from "../routes/walletRoutes.js";
+import { getBalanceMinor } from "../routes/walletRoutes.js";
+import { transfer } from "../routes/transactionRoutes.js";
+import { getReceiptByTx } from "../routes/receiptRoutes.js";
 
 // Environment configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;

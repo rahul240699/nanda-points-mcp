@@ -1,4 +1,4 @@
-import { transfer } from '../services/transactionService';
-import { Txn, Receipt } from '../models/index';
+import { transfer } from '../services/transactionService.js';
+import { Txn, Receipt } from '../models/index.js';
 
 export { transfer };

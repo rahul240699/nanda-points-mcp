@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
-import { Wallets, Transactions, Receipts } from './database';
-import { Txn, Receipt, MinorUnits } from '../models/index';
+import { Wallets, Transactions, Receipts } from './database.js';
+import { Txn, Receipt, MinorUnits } from '../models/index.js';
 
 function nowIso() { return new Date().toISOString(); }
 
