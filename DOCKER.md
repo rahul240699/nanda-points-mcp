@@ -1,6 +1,13 @@
-# Docker Setup for NANDA Points MCP Server
+# Docker Setup for NANDA Points Combined Server
 
-This document explains how to run the NANDA Points MCP Server using Docker with NANDA's actual database.
+This document explains how to run the NANDA Points Combined Server (MCP + API) using Docker with NANDA's actual database.
+
+## Services
+
+The combined server runs both services on separate ports:
+
+-   **MCP Server**: `http://localhost:3000` - Model Context Protocol server for AI agents
+-   **API Server**: `http://localhost:8080` - REST API for UI teams to access data
 
 ## Prerequisites
 
@@ -35,10 +42,27 @@ This document explains how to run the NANDA Points MCP Server using Docker with 
 4. **Check health:**
 
     ```bash
+    # MCP Server health
     curl http://localhost:3000/health
+
+    # API Server health
+    curl http://localhost:8080/api/health
     ```
 
-5. **Stop services:**
+5. **Test API endpoints:**
+
+    ```bash
+    # Get all wallets
+    curl http://localhost:8080/api/wallets
+
+    # Get all transactions
+    curl http://localhost:8080/api/transactions
+
+    # Get all receipts
+    curl http://localhost:8080/api/receipts
+    ```
+
+6. **Stop services:**
     ```bash
     docker-compose down
     ```

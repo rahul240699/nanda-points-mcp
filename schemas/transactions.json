@@ -10,5 +10,6 @@
     "scale": 0,
     "createdAt": "2025-09-17T23:47:26.981Z",
     "status": "completed",
-    "error": null
+    "error": null,
+    "task": "image_classification_task"
   }

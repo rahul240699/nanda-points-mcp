@@ -12,4 +12,5 @@ export interface Txn {
   createdAt: string;
   status: "completed" | "rejected";
   error?: string | null;
+  task: string; // task that the transaction was completed for
 }

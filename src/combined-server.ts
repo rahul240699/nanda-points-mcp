@@ -4,17 +4,20 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { NP } from "../models/index.js";
-import { initMongo } from "../services/index.js";
-import { getAgentWithWallet, getAgent, setAgentServiceCharge } from "../routes/agentRoutes.js";
-import { attachWallet } from "../routes/walletRoutes.js";
-import { getBalanceMinor } from "../routes/walletRoutes.js";
-import { transfer } from "../routes/transactionRoutes.js";
-import { getReceiptByTx } from "../routes/receiptRoutes.js";
+import cors from "cors";
+import { NP } from "./models/index.js";
+import { initMongo } from "./services/index.js";
+import { getAgentWithWallet, getAgent, setAgentServiceCharge } from "./routes/agentRoutes.js";
+import { attachWallet } from "./routes/walletRoutes.js";
+import { getBalanceMinor } from "./routes/walletRoutes.js";
+import { transfer } from "./routes/transactionRoutes.js";
+import { getReceiptByTx } from "./routes/receiptRoutes.js";
+import apiRoutes from "./api/index.js";
 
 // Environment configuration
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
-const HOST = process.env.HOST || 'localhost';
+const MCP_PORT = process.env.MCP_PORT ? parseInt(process.env.MCP_PORT, 10) : 3000;
+const API_PORT = process.env.API_PORT ? parseInt(process.env.API_PORT, 10) : 8080;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Initialize MongoDB connection
 await initMongo();
@@ -22,6 +25,7 @@ await initMongo();
 // Create Express app
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 // Map to store transports by session ID for stateful connections
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
@@ -227,14 +231,35 @@ const mcpGetHandler = async (req: express.Request, res: express.Response) => {
 app.post('/mcp', mcpPostHandler);
 app.get('/mcp', mcpGetHandler);
 
-// Health check endpoint
+// Mount API routes
+app.use('/api', apiRoutes);
+
+// Health check endpoints
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', server: 'nanda-points-mcp', version: '0.2.0' });
+  res.json({ status: 'healthy', server: 'nanda-points-combined', version: '0.2.0' });
 });
 
-// Start the HTTP server
-app.listen(PORT, HOST, () => {
-  console.log(`🚀 NANDA Points MCP Server running at http://${HOST}:${PORT}`);
-  console.log(`📡 MCP endpoint: http://${HOST}:${PORT}/mcp`);
-  console.log(`💊 Health check: http://${HOST}:${PORT}/health`);
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Nanda Points API is running' });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Nanda Points Combined Server', 
+    version: '0.2.0',
+    services: {
+      mcp: `http://${HOST}:${MCP_PORT}/mcp`,
+      api: `http://${HOST}:${API_PORT}/api`,
+      health: `http://${HOST}:${MCP_PORT}/health`
+    }
+  });
+});
+
+// Start the combined server
+app.listen(MCP_PORT, HOST, () => {
+  console.log(`🚀 NANDA Points Combined Server running at http://${HOST}:${MCP_PORT}`);
+  console.log(`📡 MCP endpoint: http://${HOST}:${MCP_PORT}/mcp`);
+  console.log(`🌐 API endpoints: http://${HOST}:${MCP_PORT}/api`);
+  console.log(`💊 Health check: http://${HOST}:${MCP_PORT}/health`);
 });

@@ -34,11 +34,12 @@ COPY --from=builder /app/dist ./dist
 USER node
 
 # Network
-EXPOSE 3000
+EXPOSE 3000 8080
 
 # Environment
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV MCP_PORT=3000
+ENV API_PORT=8080
 ENV HOST=0.0.0.0
 
 # Health check (adjust path if your server exposes a different health route)
