@@ -1,11 +1,20 @@
 # NANDA Points MCP Server (MongoDB)
 
-Modular MCP server for NANDA Points using MongoDB with agent-based transactions and **Streamable HTTP Transport**. Exposes tools:
+Modular MCP server for NANDA Points using MongoDB with agent-based transactions and **Streamable HTTP Transport**. Features **x402-NP payment protocol** for tool access control.
 
--   `getBalance(agent_name)` - Get NP balance for an agent (returns error if agent doesn't exist)
--   `initiateTransaction(from, to, amount)` - Transfer NP between agents with immediate receipt payload
+## Tools
+
+### Free Tools
+-   `getBalance(agent_name)` - Get NP balance for an agent
+-   `initiateTransaction(from, to, amount)` - Transfer NP between agents
 -   `getReceipt(txId)` - Get receipt for a transaction ID
+-   `getPaymentInfo()` - Get x402-NP payment requirements for paid tools
 -   `setServiceCharge(agent_name, serviceChargePoints)` - Set service charge for an agent
+
+### Paid Tools (x402-NP)
+-   `getTimestamp()` - Get current server timestamp (1 NP to system)
+
+**Note:** Paid tools require payment in Nanda Points using the x402-NP protocol. See [x402-NP Documentation](docs/x402-np.md) for details.
 
 ## Architecture
 
@@ -171,6 +180,14 @@ Get the receipt for transaction ID: [paste-transaction-id-here]
 Show me the details of the last transaction receipt
 ```
 
+#### **getTimestamp Tool**
+```
+What is the current server timestamp?
+```
+```
+Get the current time from the server
+```
+
 #### **setServiceCharge Tool**
 ```
 Set the service charge for search-agent to 10 NP
@@ -316,6 +333,14 @@ Once connected, test each tool with these prompts in Cursor's chat:
 @nanda-points Show me the details of the last transaction receipt
 ```
 
+#### **getTimestamp Tool**
+```
+@nanda-points What is the current server timestamp?
+```
+```
+@nanda-points Get the current time from the server
+```
+
 #### **setServiceCharge Tool**
 ```
 @nanda-points Set the service charge for search-agent to 10 NP
@@ -444,7 +469,119 @@ src/
 ### Build & Test
 
 ```bash
-npm run build    # Compile TypeScript
-npm start        # Start MCP server
-node seed.js     # Seed database with sample data
+npm run build              # Compile TypeScript
+npm start                  # Start MCP server
+npm run seed              # Seed database with sample data
+npm run test              # Test basic MCP functionality
+npm run test:x402-full    # Test x402-NP payment protocol
 ```
+
+## x402-NP Payment Protocol
+
+This server implements the x402 payment protocol adapted for Nanda Points (x402-NP), enabling programmatic payments for tool access without cryptocurrency.
+
+### Quick Start
+
+1. **Call a paid tool** without payment → receive payment instructions
+2. **Use `initiateTransaction`** to pay the required amount to the recipient
+3. **Retry the tool** with payment arguments:
+   - `_paymentAgent`: Your agent name
+   - `_paymentTxId`: Transaction ID from step 2
+   - `_paymentAmount`: Amount paid
+
+### Testing the x402-NP Implementation
+
+Run comprehensive tests to verify the payment system:
+
+```bash
+# Test basic MCP functionality
+npm run test
+
+# Test x402-NP payment protocol with full logging
+npm run test:x402-full
+
+# Run updated test with current tool configuration
+npx tsx run-updated-test.ts
+```
+
+### Sample Test Prompts
+
+#### Using MCP Client (Recommended)
+
+```typescript
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+
+const client = new Client({ name: "test-client", version: "1.0.0" }, { capabilities: {} });
+const transport = new StreamableHTTPClientTransport(new URL("http://localhost:3000/mcp"));
+await client.connect(transport);
+
+// 1. List available tools
+const tools = await client.listTools();
+
+// 2. Test free tool (if available)
+const paymentInfo = await client.callTool({
+  name: "getPaymentInfo",
+  arguments: {}
+});
+
+// 3. Test free tool (getBalance is now free)
+const balanceResult = await client.callTool({
+  name: "getBalance",
+  arguments: { agent_name: "claude-desktop" }
+});
+
+// 4. Test paid tool without payment (should require payment)
+const timestampResult = await client.callTool({
+  name: "getTimestamp",
+  arguments: {}
+});
+
+// 5. Make payment for paid tool
+const payment = await client.callTool({
+  name: "initiateTransaction",
+  arguments: { from: "claude-desktop", to: "system", amount: 1 }
+});
+
+// 6. Retry paid tool with payment proof
+const paidTimestamp = await client.callTool({
+  name: "getTimestamp",
+  arguments: {
+    _paymentAgent: "claude-desktop",
+    _paymentTxId: "transaction-id-from-step-5",
+    _paymentAmount: "1"
+  }
+});
+```
+
+#### Using Raw HTTP (Advanced)
+
+```bash
+# Health Check
+curl -X GET http://localhost:3000/health
+
+# Note: Direct HTTP calls to /mcp require proper session management
+# Use the MCP client for reliable testing
+```
+
+### Current Status
+
+**✅ Implementation Status:** The x402-NP payment system is **fully operational**.
+
+**Test Results Summary:**
+- ✅ MCP server running with Streamable HTTP transport
+- ✅ Free tools (getBalance, initiateTransaction, getReceipt) working correctly
+- ✅ Paid tools (getTimestamp) enforcing payment requirements
+- ✅ `getPaymentInfo` tool registered and working
+- ✅ Payment wrapper correctly applied to paid tools
+- ✅ Full payment flow working end-to-end
+
+### Complete Test Log
+
+See `test.log` for detailed interaction logs including:
+- MCP requests/responses
+- Payment flow verification
+- Tool arguments and results
+- Transaction receipts and balances
+
+For complete documentation see: [docs/x402-np.md](docs/x402-np.md)

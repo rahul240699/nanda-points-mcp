@@ -10,6 +10,7 @@ import { getAgentWithWallet, getAgent, setAgentServiceCharge } from "../routes/a
 import { getBalanceMinor } from "../routes/walletRoutes";
 import { transfer } from "../routes/transactionRoutes";
 import { getReceiptByTx } from "../routes/receiptRoutes";
+import { withPayment, NPToolConfig } from "../middleware/x402-mcp";
 
 // Environment configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -18,9 +19,20 @@ const HOST = process.env.HOST || 'localhost';
 // Initialize MongoDB connection
 await initMongo();
 
+console.log("🚨 DEBUG: Server starting with PAYMENT SYSTEM - v2.3 (getTimestamp PAID, getBalance/getReceipt FREE)");
+
 // Create Express app
 const app = express();
 app.use(express.json());
+
+// Configure paid tools for x402-NP payment system
+const paidToolsConfig: { [toolName: string]: NPToolConfig } = {
+  "getTimestamp": {
+    priceNP: 1,
+    recipient: "system", // System agent receives payments
+    description: "Get current server timestamp"
+  }
+};
 
 // Map to store transports by session ID for stateful connections
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
@@ -32,14 +44,19 @@ server.registerTool(
   "getBalance",
   {
     title: "Get Balance (NP)",
-    description: "Returns NP balance for an agent. Returns error if agent does not exist.",
-    inputSchema: { agent_name: z.string().min(1) }
+    description: "Returns NP balance for an agent. Returns error if agent does not exist. This tool is free to use.",
+    inputSchema: {
+      agent_name: z.string().min(1)
+    }
   },
-  async ({ agent_name }) => {
+  async (args) => {
+    const agent_name = args.agent_name as string;
+
     const agentWithWallet = await getAgentWithWallet(agent_name);
     if (!agentWithWallet) {
       return { content: [{ type: "text", text: JSON.stringify({ error: "AGENT_NOT_FOUND", agent_name }, null, 2) }] };
     }
+
     const balMinor = await getBalanceMinor(agent_name);
     const payload = { agent_name, currency: NP.code, scale: NP.scale, balanceMinor: balMinor, balancePoints: NP.toMajorUnits(balMinor) };
     return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] };
@@ -50,31 +67,39 @@ server.registerTool(
   "initiateTransaction",
   {
     title: "Initiate Transaction (NP)",
-    description: "Transfer NP from one agent to another and record ledger + receipt. Returns error if either agent does not exist.",
-    inputSchema: { from: z.string().min(1), to: z.string().min(1), amount: z.number().int().positive() }
+    description: "Transfer NP from one agent to another and record ledger + receipt. Returns error if either agent does not exist. This tool is free to use.",
+    inputSchema: {
+      from: z.string().min(1),
+      to: z.string().min(1),
+      amount: z.number().int().positive()
+    }
   },
-  async ({ from, to, amount }) => {
+  async (args) => {
+    const from = args.from as string;
+    const to = args.to as string;
+    const amount = args.amount as number;
+
     const fromAgent = await getAgentWithWallet(from);
     const toAgent = await getAgentWithWallet(to);
-    
+
     if (!fromAgent) {
       return { content: [{ type: "text", text: JSON.stringify({ error: "SENDER_AGENT_NOT_FOUND", agent_name: from }, null, 2) }] };
     }
     if (!toAgent) {
       return { content: [{ type: "text", text: JSON.stringify({ error: "RECEIVER_AGENT_NOT_FOUND", agent_name: to }, null, 2) }] };
     }
-    
+
     try {
       const { tx, receipt, payload } = await transfer(from, to, NP.toMinorUnits(amount));
-      const result = { 
-        txId: tx.txId, 
-        status: tx.status, 
-        amountPoints: amount, 
-        currency: tx.currency, 
-        scale: tx.scale, 
-        from: tx.fromAgent, 
-        to: tx.toAgent, 
-        createdAt: tx.createdAt, 
+      const result = {
+        txId: tx.txId,
+        status: tx.status,
+        amountPoints: amount,
+        currency: tx.currency,
+        scale: tx.scale,
+        from: tx.fromAgent,
+        to: tx.toAgent,
+        createdAt: tx.createdAt,
         receipt,
         payload // Receipt sent immediately to payer
       };
@@ -87,17 +112,55 @@ server.registerTool(
 
 server.registerTool(
   "getReceipt",
-  { title: "Get Receipt", description: "Return receipt for a transaction id.", inputSchema: { txId: z.string().min(1) } },
-  async ({ txId }) => {
+  {
+    title: "Get Receipt",
+    description: "Return receipt for a transaction id. This tool is free to use.",
+    inputSchema: {
+      txId: z.string().min(1)
+    }
+  },
+  async (args) => {
+    const txId = args.txId as string;
     const r = await getReceiptByTx(txId);
     return { content: [{ type: "text", text: JSON.stringify(r ?? { error: "NOT_FOUND" }, null, 2) }] };
   }
 );
 
 server.registerTool(
+  "getTimestamp",
+  {
+    title: "Get Server Timestamp",
+    description: "Returns current server timestamp. Requires payment: 1 NP to system.",
+    inputSchema: {
+      _paymentAgent: z.string().optional(),
+      _paymentTxId: z.string().optional(),
+      _paymentAmount: z.string().optional()
+    }
+  },
+  withPayment("getTimestamp", paidToolsConfig.getTimestamp, async () => {
+    const timestamp = new Date().toISOString();
+    const unixTimestamp = Math.floor(Date.now() / 1000);
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          timestamp,
+          unixTimestamp,
+          serverTime: timestamp,
+          timezone: "UTC"
+        }, null, 2)
+      }]
+    };
+  })
+);
+
+server.registerTool(
   "setServiceCharge",
   { title: "Set Service Charge (NP)", description: "Set per-call service charge (points) on agent facts. Returns error if agent does not exist.", inputSchema: { agent_name: z.string().min(1), serviceChargePoints: z.number().int().nonnegative() } },
-  async ({ agent_name, serviceChargePoints }) => {
+  async (args) => {
+    const agent_name = args.agent_name as string;
+    const serviceChargePoints = args.serviceChargePoints as number;
     const agent = await getAgent(agent_name);
     if (!agent) {
       return { content: [{ type: "text", text: JSON.stringify({ error: "AGENT_NOT_FOUND", agent_name }, null, 2) }] };
@@ -105,6 +168,34 @@ server.registerTool(
     await setAgentServiceCharge(agent_name, serviceChargePoints);
     const updated = await getAgent(agent_name);
     return { content: [{ type: "text", text: JSON.stringify({ agent_name, serviceCharge: updated?.serviceCharge }, null, 2) }] };
+  }
+);
+
+server.registerTool(
+  "getPaymentInfo",
+  {
+    title: "Get Payment Information",
+    description: "Get x402-NP payment requirements for all paid tools. This tool is free to use.",
+    inputSchema: {}
+  },
+  async () => {
+    const paymentInfo = {
+      protocol: "x402-np",
+      currency: NP.code,
+      scale: NP.scale,
+      tools: paidToolsConfig,
+      instructions: {
+        steps: [
+          "To use a paid tool, first call it normally to get a 402 Payment Required response",
+          "Use the initiateTransaction tool to pay the required amount to the specified recipient",
+          "Include the transaction ID in the X-PAYMENT-TX-ID header",
+          "Include your agent name in the X-PAYMENT-AGENT header",
+          "Include the payment amount in the X-PAYMENT-AMOUNT header",
+          "Retry the original tool call with these headers"
+        ]
+      }
+    };
+    return { content: [{ type: "text", text: JSON.stringify(paymentInfo, null, 2) }] };
   }
 );
 
@@ -197,7 +288,7 @@ app.post('/mcp', mcpPostHandler);
 app.get('/mcp', mcpGetHandler);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'healthy', server: 'nanda-points-mcp', version: '0.2.0' });
 });
 
