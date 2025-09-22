@@ -9,9 +9,15 @@
     "start": "node dist/combined-server.js",
     "seed": "tsx seed.js",
     "mcp:server": "tsx src/mcp/server.ts",
+
+    "test": "tsx test/test-mcp-client.ts",
+    "test:x402": "tsx tests/x402-np.test.ts",
+    "test:x402-simple": "tsx tests/x402-simple.test.ts",
+    "test:x402-full": "tsx run-comprehensive-test.ts"
     "api:server": "tsx src/api/server.ts",
     "combined:server": "tsx src/combined-server.ts",
     "test": "tsx test/test-mcp-client.ts"
+
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.0",

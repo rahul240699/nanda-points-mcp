@@ -92,6 +92,17 @@ const payer = agentDoc({
   email: 'claude@anthropic.com'
 });
 
+// System agent for x402-NP payments
+const systemAgent = agentDoc({
+  agent_name: 'system',
+  label: 'system',
+  description: 'System payment recipient for x402-NP',
+  serviceCharge: 0,
+  endpointsStatic: [],
+  username: 'system',
+  email: 'system@nanda.org'
+});
+
 // 10 other agents with different "capabilities" (encoded via name/label)
 const capabilityAgents = [
   { key: 'search',        name: 'Search Agent',        label: 'search',        description: 'Search Agent' },
@@ -116,7 +127,7 @@ const capabilityAgents = [
   })
 );
 
-const ALL_AGENTS = [payer, ...capabilityAgents];
+const ALL_AGENTS = [payer, systemAgent, ...capabilityAgents];
 
 async function main() {
   const client = new MongoClient(uri);
