@@ -1,8 +1,8 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { getReceiptByTx } from '../routes/receiptRoutes';
-import { getAgentWithWallet } from '../routes/agentRoutes';
-import { NP } from '../models/index';
-import type { Receipt } from '../models/receipt';
+import { getReceiptByTx } from '../routes/receiptRoutes.js';
+import { getAgentWithWallet } from '../routes/agentRoutes.js';
+import { NP } from '../models/index.js';
+import type { Receipt } from '../models/receipt.js';
 
 export interface NPToolConfig {
   readonly priceNP: number; // Price in NP points
