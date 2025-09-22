@@ -13,6 +13,7 @@ import { getBalanceMinor } from "./routes/walletRoutes.js";
 import { transfer } from "./routes/transactionRoutes.js";
 import { getReceiptByTx } from "./routes/receiptRoutes.js";
 import apiRoutes from "./api/index.js";
+import { withPayment, NPToolConfig } from "./middleware/x402-mcp.js";
 
 // Environment configuration
 const MCP_PORT = process.env.MCP_PORT ? parseInt(process.env.MCP_PORT, 10) : 3000;
@@ -26,6 +27,15 @@ await initMongo();
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// Configure paid tools for x402-NP payment system
+const paidToolsConfig: { [toolName: string]: NPToolConfig } = {
+  "getTimestamp": {
+    priceNP: 1,
+    recipient: "system", // System agent receives payments
+    description: "Get current server timestamp"
+  }
+};
 
 // Map to store transports by session ID for stateful connections
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
@@ -105,6 +115,35 @@ server.registerTool(
 );
 
 server.registerTool(
+  "getTimestamp",
+  {
+    title: "Get Server Timestamp",
+    description: "Returns current server timestamp. Requires payment: 1 NP to system.",
+    inputSchema: {
+      _paymentAgent: z.string().optional(),
+      _paymentTxId: z.string().optional(),
+      _paymentAmount: z.string().optional()
+    }
+  },
+  withPayment("getTimestamp", paidToolsConfig.getTimestamp, async () => {
+    const timestamp = new Date().toISOString();
+    const unixTimestamp = Math.floor(Date.now() / 1000);
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          timestamp,
+          unixTimestamp,
+          serverTime: timestamp,
+          timezone: "UTC"
+        }, null, 2)
+      }]
+    };
+  })
+);
+
+server.registerTool(
   "setServiceCharge",
   { title: "Set Service Charge (NP)", description: "Set per-call service charge (points) on agent facts. Returns error if agent does not exist.", inputSchema: { agent_name: z.string().min(1), serviceChargePoints: z.number().int().nonnegative() } },
   async ({ agent_name, serviceChargePoints }) => {
@@ -115,6 +154,34 @@ server.registerTool(
     await setAgentServiceCharge(agent_name, serviceChargePoints);
     const updated = await getAgent(agent_name);
     return { content: [{ type: "text", text: JSON.stringify({ agent_name, serviceCharge: updated?.serviceCharge }, null, 2) }] };
+  }
+);
+
+server.registerTool(
+  "getPaymentInfo",
+  {
+    title: "Get Payment Information",
+    description: "Get x402-NP payment requirements for all paid tools. This tool is free to use.",
+    inputSchema: {}
+  },
+  async () => {
+    const paymentInfo = {
+      protocol: "x402-np",
+      currency: NP.code,
+      scale: NP.scale,
+      tools: paidToolsConfig,
+      instructions: {
+        steps: [
+          "To use a paid tool, first call it normally to get a 402 Payment Required response",
+          "Use the initiateTransaction tool to pay the required amount to the specified recipient",
+          "Include the transaction ID in the X-PAYMENT-TX-ID header",
+          "Include your agent name in the X-PAYMENT-AGENT header",
+          "Include the payment amount in the X-PAYMENT-AMOUNT header",
+          "Retry the original tool call with these headers"
+        ]
+      }
+    };
+    return { content: [{ type: "text", text: JSON.stringify(paymentInfo, null, 2) }] };
   }
 );
 
