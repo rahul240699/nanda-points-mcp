@@ -197,6 +197,8 @@ server.registerTool(
       }
     };
     return { content: [{ type: "text", text: JSON.stringify(paymentInfo, null, 2) }] };
+  }
+);
 
  server.registerTool(
   "attachWallet",
