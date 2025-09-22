@@ -1,4 +1,4 @@
-import { getReceiptByTx } from '../services/receiptService';
-import { Receipt } from '../models/index';
+import { getReceiptByTx } from '../services/receiptService.js';
+import { Receipt } from '../models/index.js';
 
 export { getReceiptByTx };

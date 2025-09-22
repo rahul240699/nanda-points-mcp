@@ -1,6 +1,6 @@
 // Re-export all models and utilities
-export * from './points';
-export * from './agent';
-export * from './wallet';
-export * from './transaction';
-export * from './receipt';
+export * from './points.js';
+export * from './agent.js';
+export * from './wallet.js';
+export * from './transaction.js';
+export * from './receipt.js';
