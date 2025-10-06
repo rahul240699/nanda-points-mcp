@@ -16,7 +16,7 @@ services:
             HOST: 0.0.0.0
             # Connect to NANDA's actual database
             MONGODB_URI: ${MONGODB_URI}
-            NP_DB_NAME: ${NP_DB_NAME:-nanda_points}
+            NP_DB_NAME: ${NP_DB_NAME:-nanda}
         healthcheck:
             test:
                 [

@@ -5,3 +5,6 @@ dist
 
 # Cursor IDE configuration (contains personal/temporary URLs)
 .cursor/
+create-wallets.ts
+debug.js
+test-agents.ts
