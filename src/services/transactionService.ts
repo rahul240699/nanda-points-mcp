@@ -9,8 +9,8 @@ export async function transfer(fromAgent: string, toAgent: string, amountMinor: 
   const txId = randomUUID();
 
   // 1. Ensure both wallets exist and check balance
-  const fromWallet = await Wallets.findOne({ agent_name: fromAgent });
-  const toWallet = await Wallets.findOne({ agent_name: toAgent });
+  const fromWallet = await Wallets.findOne({ agent_id: fromAgent });
+  const toWallet = await Wallets.findOne({ agent_id: toAgent });
   
   if (!fromWallet) throw new Error("SENDER_WALLET_NOT_FOUND");
   if (!toWallet) throw new Error("RECEIVER_WALLET_NOT_FOUND");
@@ -18,7 +18,7 @@ export async function transfer(fromAgent: string, toAgent: string, amountMinor: 
 
   // 2. Deduct from sender's wallet
   const updatedFromWallet = await Wallets.findOneAndUpdate(
-    { agent_name: fromAgent },
+    { agent_id: fromAgent },
     { $inc: { balanceMinor: -amountMinor }, $set: { updatedAt: nowIso() } },
     { returnDocument: "after" }
   );
@@ -26,7 +26,7 @@ export async function transfer(fromAgent: string, toAgent: string, amountMinor: 
 
   // 3. Add to receiver's wallet
   const updatedToWallet = await Wallets.findOneAndUpdate(
-    { agent_name: toAgent },
+    { agent_id: toAgent },
     { $inc: { balanceMinor: amountMinor }, $set: { updatedAt: nowIso() } },
     { returnDocument: "after" }
   );

@@ -3,11 +3,11 @@ import { Wallets } from '../services/database.js';
 
 const router = Router();
 
-// Get wallet by agent name
-router.get('/agent/:agentName', async (req, res) => {
+// Get wallet by agent id
+router.get('/agent/:agentId', async (req, res) => {
   try {
-    const { agentName } = req.params;
-    const wallet = await Wallets.findOne({ agent_name: agentName });
+    const { agentId } = req.params;
+    const wallet = await Wallets.findOne({ agent_id: agentId });
     
     if (!wallet) {
       return res.status(404).json({ error: 'Wallet not found' });

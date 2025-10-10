@@ -3,7 +3,7 @@
 // Based on the provided agent format with serviceCharge added
 export interface AgentFacts {
   _id?: string; // registry id (e.g., "agt_8f21c9"); Mongo may also supply ObjectId if omitted
-  id: string; // unique agent identifier
+  agent_id: string; // unique agent identifier
   agent_name: string;
   label: string;
   description: string;

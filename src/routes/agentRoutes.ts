@@ -2,12 +2,12 @@ import { ensureAgent, getAgent, setAgentServiceCharge } from '../services/agentS
 import { getWallet } from '../services/walletService.js';
 import { AgentFacts, Wallet } from '../models/index.js';
 
-export async function getAgentWithWallet(agent_name: string): Promise<{ agent: AgentFacts; wallet: Wallet } | null> {
-  const agent = await ensureAgent(agent_name);
+export async function getAgentWithWallet(agent_id: string): Promise<{ agent: AgentFacts; wallet: Wallet } | null> {
+  const agent = await ensureAgent(agent_id);
   if (!agent) {
     return null;
   }
-  const wallet = await getWallet(agent_name);
+  const wallet = await getWallet(agent_id);
   if (!wallet) {
     return null;
   }

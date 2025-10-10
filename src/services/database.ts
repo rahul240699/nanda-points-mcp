@@ -15,10 +15,10 @@ export async function initMongo() {
   Receipts = db.collection<Receipt>("receipts");
 
   await Promise.all([
-    Agents.createIndex({ agent_name: 1 }, { unique: true }),
+    Agents.createIndex({ agent_id: 1 }, { unique: true }),
     Agents.createIndex({ walletId: 1 }, { unique: true, sparse: true }),
     Wallets.createIndex({ walletId: 1 }, { unique: true }),
-    Wallets.createIndex({ agent_name: 1 }, { unique: true }),
+    Wallets.createIndex({ agent_id: 1 }, { unique: true }),
     Transactions.createIndex({ txId: 1 }, { unique: true }),
     Receipts.createIndex({ txId: 1 }, { unique: true }),
   ]);
