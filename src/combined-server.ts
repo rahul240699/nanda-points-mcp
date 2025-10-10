@@ -48,15 +48,15 @@ server.registerTool(
   {
     title: "Get Balance (NP)",
     description: "Returns NP balance for an agent. Returns error if agent does not exist.",
-    inputSchema: { agent_name: z.string().min(1) }
+    inputSchema: { agent_id: z.string().min(1) }
   },
-  async ({ agent_name }) => {
-    const agentWithWallet = await getAgentWithWallet(agent_name);
+  async ({ agent_id }) => {
+    const agentWithWallet = await getAgentWithWallet(agent_id);
     if (!agentWithWallet) {
-      return { content: [{ type: "text", text: JSON.stringify({ error: "AGENT_NOT_FOUND", agent_name }, null, 2) }] };
+      return { content: [{ type: "text", text: JSON.stringify({ error: "AGENT_NOT_FOUND", agent_id }, null, 2) }] };
     }
-    const balMinor = await getBalanceMinor(agent_name);
-    const payload = { agent_name, currency: NP.code, scale: NP.scale, balanceMinor: balMinor, balancePoints: NP.toMajorUnits(balMinor) };
+    const balMinor = await getBalanceMinor(agent_id);
+    const payload = { agent_id, currency: NP.code, scale: NP.scale, balanceMinor: balMinor, balancePoints: NP.toMajorUnits(balMinor) };
     return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] };
   }
 );
@@ -78,10 +78,10 @@ server.registerTool(
     const toAgent = await getAgentWithWallet(to);
     
     if (!fromAgent) {
-      return { content: [{ type: "text", text: JSON.stringify({ error: "SENDER_AGENT_NOT_FOUND", agent_name: from }, null, 2) }] };
+      return { content: [{ type: "text", text: JSON.stringify({ error: "SENDER_AGENT_NOT_FOUND", agent_id: from }, null, 2) }] };
     }
     if (!toAgent) {
-      return { content: [{ type: "text", text: JSON.stringify({ error: "RECEIVER_AGENT_NOT_FOUND", agent_name: to }, null, 2) }] };
+      return { content: [{ type: "text", text: JSON.stringify({ error: "RECEIVER_AGENT_NOT_FOUND", agent_id: to }, null, 2) }] };
     }
     
     try {
@@ -145,15 +145,15 @@ server.registerTool(
 
 server.registerTool(
   "setServiceCharge",
-  { title: "Set Service Charge (NP)", description: "Set per-call service charge (points) on agent facts. Returns error if agent does not exist.", inputSchema: { agent_name: z.string().min(1), serviceChargePoints: z.number().int().nonnegative() } },
-  async ({ agent_name, serviceChargePoints }) => {
-    const agent = await getAgent(agent_name);
+  { title: "Set Service Charge (NP)", description: "Set per-call service charge (points) on agent facts. Returns error if agent does not exist.", inputSchema: { agent_id: z.string().min(1), serviceChargePoints: z.number().int().nonnegative() } },
+  async ({ agent_id, serviceChargePoints }) => {
+    const agent = await getAgent(agent_id);
     if (!agent) {
-      return { content: [{ type: "text", text: JSON.stringify({ error: "AGENT_NOT_FOUND", agent_name }, null, 2) }] };
+      return { content: [{ type: "text", text: JSON.stringify({ error: "AGENT_NOT_FOUND", agent_id }, null, 2) }] };
     }
-    await setAgentServiceCharge(agent_name, serviceChargePoints);
-    const updated = await getAgent(agent_name);
-    return { content: [{ type: "text", text: JSON.stringify({ agent_name, serviceCharge: updated?.serviceCharge }, null, 2) }] };
+    await setAgentServiceCharge(agent_id, serviceChargePoints);
+    const updated = await getAgent(agent_id);
+    return { content: [{ type: "text", text: JSON.stringify({ agent_id, serviceCharge: updated?.serviceCharge }, null, 2) }] };
   }
 );
 
@@ -191,17 +191,17 @@ server.registerTool(
     title: "Attach Wallet to Agent", 
     description: "Attach a wallet to an agent. If the agent doesn't have a wallet, creates a new one and attaches it. If agent already has a wallet, returns the existing wallet. Returns error if agent does not exist.", 
     inputSchema: { 
-      agent_name: z.string().min(1), 
+      agent_id: z.string().min(1), 
       seedPoints: z.number().int().nonnegative().optional().describe("Initial points to seed the wallet with (default: 1000)")
     } 
   },
-  async ({ agent_name, seedPoints }) => {
-    const result = await attachWallet(agent_name, seedPoints);
+  async ({ agent_id, seedPoints }) => {
+    const result = await attachWallet(agent_id, seedPoints);
     if (!result) {
-      return { content: [{ type: "text", text: JSON.stringify({ error: "AGENT_NOT_FOUND", agent_name }, null, 2) }] };
+      return { content: [{ type: "text", text: JSON.stringify({ error: "AGENT_NOT_FOUND", agent_id }, null, 2) }] };
     }
     return { content: [{ type: "text", text: JSON.stringify({ 
-      agent_name, 
+      agent_id, 
       walletId: result.wallet.walletId,
       balanceMinor: result.wallet.balanceMinor,
       balancePoints: NP.toMajorUnits(result.wallet.balanceMinor),
